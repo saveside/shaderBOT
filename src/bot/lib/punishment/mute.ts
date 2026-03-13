@@ -21,26 +21,29 @@ export class Mute extends ExpirablePunishment {
     static async has(userId: string): Promise<boolean> {
         const result = await db.query.mute.findFirst({
             columns: { id: true },
-            where: sql.eq(schema.mute.userId, userId),
+            where: { userId },
         });
         return result !== undefined;
     }
 
     static async getByUUID(uuid: string) {
-        const result = await db.query.mute.findFirst({ where: sql.eq(schema.mute.id, uuid) });
+        const result = await db.query.mute.findFirst({ where: { id: uuid } });
         if (!result) return Promise.reject('A mute with the specified UUID does not exist.');
         return new Mute(result);
     }
 
     static async getByUserID(userId: string) {
-        const result = await db.query.mute.findFirst({ where: sql.eq(schema.mute.userId, userId) });
+        const result = await db.query.mute.findFirst({ where: { userId } });
         if (!result) return Promise.reject('The specified user does not have any past mutes.');
         return new Mute(result);
     }
 
     static async getExpiringToday() {
         const result = await db.query.mute.findMany({
-            where: sql.and(sql.isNotNull(schema.mute.expireTimestamp), sql.lte(sql.sql`${schema.mute.expireTimestamp}::DATE`, sql.sql`NOW()::DATE`)),
+            where: {
+                expireTimestamp: { isNotNull: true },
+                RAW: (table) => sql.lte(sql.sql`${table.expireTimestamp}::DATE`, sql.sql`NOW()::DATE`),
+            },
         });
 
         return result.map((entry) => new Mute(entry));
@@ -48,7 +51,10 @@ export class Mute extends ExpirablePunishment {
 
     static async getExpiringTomorrow() {
         const result = await db.query.mute.findMany({
-            where: sql.and(sql.isNotNull(schema.mute.expireTimestamp), sql.lte(sql.sql`${schema.mute.expireTimestamp}::DATE`, sql.sql`NOW()::DATE + INTERVAL '1 day'`)),
+            where: {
+                expireTimestamp: { isNotNull: true },
+                RAW: (table) => sql.lte(sql.sql`${table.expireTimestamp}::DATE`, sql.sql`NOW()::DATE + INTERVAL '1 day'`),
+            },
         });
 
         return result.map((entry) => new Mute(entry));
@@ -241,7 +247,7 @@ export class LiftedMute extends LiftedPunishment {
 
     static async getByUUID(uuid: string) {
         const result = await db.query.liftedMute.findFirst({
-            where: sql.eq(schema.liftedMute.id, uuid),
+            where: { id: uuid },
         });
         if (!result) return Promise.reject('A lifted mute with the specified UUID does not exist.');
         return new LiftedMute(result);
@@ -249,8 +255,8 @@ export class LiftedMute extends LiftedPunishment {
 
     static async getLatestByUserID(userId: string) {
         const result = await db.query.liftedMute.findFirst({
-            where: sql.eq(schema.liftedMute.userId, userId),
-            orderBy: sql.desc(schema.liftedMute.timestamp),
+            where: { userId },
+            orderBy: { timestamp: 'desc' },
         });
 
         if (!result) return Promise.reject('The specified user does not have any lifted mutes.');
@@ -259,8 +265,8 @@ export class LiftedMute extends LiftedPunishment {
 
     static async getAllByUserID(userId: string) {
         const result = await db.query.liftedMute.findMany({
-            where: sql.eq(schema.liftedMute.userId, userId),
-            orderBy: sql.desc(schema.liftedMute.timestamp),
+            where: { userId },
+            orderBy: { timestamp: 'desc' },
         });
 
         return result.map((entry) => new LiftedMute(entry));

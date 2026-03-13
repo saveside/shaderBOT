@@ -19,20 +19,20 @@ export class ChannelSlowmode extends ChannelRestriction {
     }
 
     static async getByUUID(uuid: string) {
-        const result = await db.query.channelSlowmode.findFirst({ where: sql.eq(schema.channelSlowmode.id, uuid) });
+        const result = await db.query.channelSlowmode.findFirst({ where: { id: uuid } });
         if (!result) return Promise.reject('A channel slowmode with the specified UUID does not exist.');
         return new ChannelSlowmode(result);
     }
 
     static async getByChannelID(channelId: string) {
-        const result = await db.query.channelSlowmode.findFirst({ where: sql.eq(schema.channelSlowmode.channelId, channelId) });
+        const result = await db.query.channelSlowmode.findFirst({ where: { channelId } });
         if (!result) return Promise.reject(`The specified channel does not have an active channel slowmode.`);
         return new ChannelSlowmode(result);
     }
 
     static async getExpiringToday() {
         const result = await db.query.channelSlowmode.findMany({
-            where: sql.lte(sql.sql`${schema.channelSlowmode.expireTimestamp}::DATE`, sql.sql`NOW()::DATE`),
+            where: { RAW: (table) => sql.lte(sql.sql`${table.expireTimestamp}::DATE`, sql.sql`NOW()::DATE`) },
         });
 
         return result.map((entry) => new ChannelSlowmode(entry));
@@ -40,7 +40,7 @@ export class ChannelSlowmode extends ChannelRestriction {
 
     static async getExpiringTomorrow() {
         const result = await db.query.channelSlowmode.findMany({
-            where: sql.lte(sql.sql`${schema.channelSlowmode.expireTimestamp}::DATE`, sql.sql`NOW()::DATE + INTERVAL '1 day'`),
+            where: { RAW: (table) => sql.lte(sql.sql`${table.expireTimestamp}::DATE`, sql.sql`NOW()::DATE + INTERVAL '1 day'`) },
         });
 
         return result.map((entry) => new ChannelSlowmode(entry));

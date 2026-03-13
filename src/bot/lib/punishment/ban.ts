@@ -20,26 +20,29 @@ export class Ban extends ExpirablePunishment {
     static async has(userId: string): Promise<boolean> {
         const result = await db.query.ban.findFirst({
             columns: { id: true },
-            where: sql.eq(schema.ban.userId, userId),
+            where: { userId },
         });
         return result !== undefined;
     }
 
     static async getByUUID(uuid: string) {
-        const result = await db.query.ban.findFirst({ where: sql.eq(schema.ban.id, uuid) });
+        const result = await db.query.ban.findFirst({ where: { id: uuid } });
         if (!result) return Promise.reject('A ban with the specified UUID does not exist.');
         return new Ban(result);
     }
 
     static async getByUserID(userId: string) {
-        const result = await db.query.ban.findFirst({ where: sql.eq(schema.ban.userId, userId) });
+        const result = await db.query.ban.findFirst({ where: { userId } });
         if (!result) return Promise.reject('The specified user does not have any past bans.');
         return new Ban(result);
     }
 
     static async getExpiringToday() {
         const result = await db.query.ban.findMany({
-            where: sql.and(sql.isNotNull(schema.ban.expireTimestamp), sql.lte(sql.sql`${schema.ban.expireTimestamp}::DATE`, sql.sql`NOW()::DATE`)),
+            where: {
+                expireTimestamp: { isNotNull: true },
+                RAW: (table) => sql.lte(sql.sql`${table.expireTimestamp}::DATE`, sql.sql`NOW()::DATE`),
+            },
         });
 
         return result.map((entry) => new Ban(entry));
@@ -47,7 +50,10 @@ export class Ban extends ExpirablePunishment {
 
     static async getExpiringTomorrow() {
         const result = await db.query.ban.findMany({
-            where: sql.and(sql.isNotNull(schema.ban.expireTimestamp), sql.lte(sql.sql`${schema.ban.expireTimestamp}::DATE`, sql.sql`NOW()::DATE + INTERVAL '1 day'`)),
+            where: {
+                expireTimestamp: { isNotNull: true },
+                RAW: (table) => sql.lte(sql.sql`${table.expireTimestamp}::DATE`, sql.sql`NOW()::DATE + INTERVAL '1 day'`),
+            },
         });
 
         return result.map((entry) => new Ban(entry));
@@ -260,7 +266,7 @@ export class LiftedBan extends LiftedPunishment {
 
     static async getByUUID(uuid: string) {
         const result = await db.query.liftedBan.findFirst({
-            where: sql.eq(schema.liftedBan.id, uuid),
+            where: { id: uuid },
         });
         if (!result) return Promise.reject('A lifted ban with the specified UUID does not exist.');
         return new LiftedBan(result);
@@ -268,8 +274,8 @@ export class LiftedBan extends LiftedPunishment {
 
     static async getLatestByUserID(userId: string) {
         const result = await db.query.liftedBan.findFirst({
-            where: sql.eq(schema.liftedBan.userId, userId),
-            orderBy: sql.desc(schema.liftedBan.timestamp),
+            where: { userId },
+            orderBy: { timestamp: 'desc' },
         });
 
         if (!result) return Promise.reject('The specified user does not have any lifted bans.');
@@ -278,8 +284,8 @@ export class LiftedBan extends LiftedPunishment {
 
     static async getAllByUserID(userId: string) {
         const result = await db.query.liftedBan.findMany({
-            where: sql.eq(schema.liftedBan.userId, userId),
-            orderBy: sql.desc(schema.liftedBan.timestamp),
+            where: { userId },
+            orderBy: { timestamp: 'desc' },
         });
 
         return result.map((entry) => new LiftedBan(entry));

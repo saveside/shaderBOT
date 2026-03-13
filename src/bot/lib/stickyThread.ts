@@ -22,13 +22,13 @@ export class StickyThread {
     }
 
     public static async getByUUID(uuid: string) {
-        const result = await db.query.stickyThread.findFirst({ where: sql.eq(schema.stickyThread.id, uuid) });
+        const result = await db.query.stickyThread.findFirst({ where: { id: uuid } });
         if (!result) return Promise.reject(`A sticky thread with the specified UUID does not exist.`);
         return new StickyThread(result);
     }
 
     public static async getByThreadID(threadId: string) {
-        const result = await db.query.stickyThread.findFirst({ where: sql.eq(schema.stickyThread.threadId, threadId) });
+        const result = await db.query.stickyThread.findFirst({ where: { threadId } });
         if (!result) return Promise.reject(`The specified thread is not sticky.`);
         return new StickyThread(result);
     }
@@ -62,7 +62,7 @@ export class StickyThread {
     public static async isSticky(threadId: string) {
         const result = await db.query.stickyThread.findFirst({
             columns: { id: true },
-            where: sql.eq(schema.stickyThread.threadId, threadId),
+            where: { threadId },
         });
         return result !== undefined;
     }

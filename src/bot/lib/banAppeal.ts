@@ -41,31 +41,31 @@ export class BanAppeal {
     }
 
     public static async getLatestByUserID(userId: string) {
-        const result = await db.query.appeal.findFirst({ where: sql.eq(schema.appeal.userId, userId), orderBy: sql.desc(schema.appeal.timestamp) });
+        const result = await db.query.appeal.findFirst({ where: { userId }, orderBy: { timestamp: 'desc' } });
         if (!result) return Promise.reject('The specified user does not have any ban appeals.');
         return new BanAppeal(result);
     }
 
     public static async getPendingByUserID(userId: string) {
-        const result = await db.query.appeal.findFirst({ where: sql.and(sql.eq(schema.appeal.userId, userId), sql.eq(schema.appeal.result, 'pending')) });
+        const result = await db.query.appeal.findFirst({ where: { userId, result: 'pending' } });
         if (!result) return Promise.reject('The specified user does not have any pending ban appeals.');
         return new BanAppeal(result);
     }
 
     public static async getByUUID(uuid: string) {
-        const result = await db.query.appeal.findFirst({ where: sql.eq(schema.appeal.id, uuid) });
+        const result = await db.query.appeal.findFirst({ where: { id: uuid } });
         if (!result) return Promise.reject('A ban appeal with the specified UUID does not exist.');
         return new BanAppeal(result);
     }
 
     public static async getAllByUserID(userId: string) {
-        const result = await db.query.appeal.findMany({ where: sql.eq(schema.appeal.userId, userId), orderBy: sql.desc(schema.appeal.timestamp) });
+        const result = await db.query.appeal.findMany({ where: { userId }, orderBy: { timestamp: 'desc' } });
         return result.map((entry) => new BanAppeal(entry));
     }
 
     public static async getByThreadID(threadId: string) {
         // thread channel ID === starter message ID
-        const result = await db.query.appeal.findFirst({ where: sql.eq(schema.appeal.messageId, threadId) });
+        const result = await db.query.appeal.findFirst({ where: { messageId: threadId } });
         if (!result) return Promise.reject('A ban appeal with the specified thread ID does not exist.');
         return new BanAppeal(result);
     }
@@ -73,7 +73,7 @@ export class BanAppeal {
     public static async hasPending(userId: string) {
         const result = await db.query.appeal.findFirst({
             columns: { id: true },
-            where: sql.and(sql.eq(schema.appeal.userId, userId), sql.eq(schema.appeal.result, 'pending')),
+            where: { userId, result: 'pending' },
         });
 
         return result !== undefined;
@@ -87,8 +87,8 @@ export class BanAppeal {
     public static async getPreviousThreadsByUserID(userId: string): Promise<string[]> {
         const result = await db.query.appeal.findMany({
             columns: { messageId: true },
-            where: sql.eq(schema.appeal.userId, userId),
-            orderBy: sql.desc(schema.appeal.timestamp),
+            where: { userId },
+            orderBy: { timestamp: 'desc' },
         });
 
         return result.map((entry) => entry.messageId!);

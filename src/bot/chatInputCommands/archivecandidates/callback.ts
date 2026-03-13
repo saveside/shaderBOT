@@ -1,7 +1,5 @@
 import { ChannelType, PermissionFlagsBits, TextChannel } from 'discord.js';
-import * as sql from 'drizzle-orm/sql';
 import { db } from '../../../db/postgres.ts';
-import * as schema from '../../../db/schema.ts';
 import { client, settings } from '../../bot.ts';
 import type { ChatInputCommandCallback } from '../../chatInputCommandHandler.ts';
 import { replyInfo } from '../../lib/embeds.ts';
@@ -13,7 +11,7 @@ export const command: ChatInputCommandCallback = {
 
         const projectChannels = await db.query.project.findMany({
             columns: { channelId: true },
-            where: sql.isNotNull(schema.project.roleId),
+            where: { roleId: { isNotNull: true } },
         });
 
         const eligibleProjectChannelPromises: Promise<TextChannel | null>[] = [];

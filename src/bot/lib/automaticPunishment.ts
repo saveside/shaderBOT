@@ -1,8 +1,6 @@
 import { User } from 'discord.js';
-import * as sql from 'drizzle-orm/sql';
 import { db } from '../../db/postgres.ts';
 import { Query } from '../../db/query.ts';
-import * as schema from '../../db/schema.ts';
 import { settings } from '../bot.ts';
 import log from './log.ts';
 import { parseUser } from './misc.ts';
@@ -22,7 +20,10 @@ function warningToPoints(severity: 0 | 1 | 2 | 3, passedMS: number) {
 export async function getPunishmentPoints(userId: string) {
     const warnings = await db.query.warn.findMany({
         columns: { severity: true, timestamp: true },
-        where: sql.and(sql.gt(schema.warn.severity, 0), sql.eq(schema.warn.userId, userId)),
+        where: {
+            severity: { gt: 0 },
+            userId,
+        },
     });
 
     if (warnings.length === 0) return 0;

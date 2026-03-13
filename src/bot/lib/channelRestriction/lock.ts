@@ -124,20 +124,20 @@ export class ChannelLock extends ChannelRestriction {
     }
 
     static async getByUUID(uuid: string) {
-        const result = await db.query.channelLock.findFirst({ where: sql.eq(schema.channelLock.id, uuid) });
+        const result = await db.query.channelLock.findFirst({ where: { id: uuid } });
         if (!result) return Promise.reject('A channel lock with the specified UUID does not exist.');
         return new ChannelLock(result);
     }
 
     static async getByChannelID(channelId: string) {
-        const result = await db.query.channelLock.findFirst({ where: sql.eq(schema.channelLock.channelId, channelId) });
+        const result = await db.query.channelLock.findFirst({ where: { channelId } });
         if (!result) return Promise.reject('The specified channel does not have an active channel lock.');
         return new ChannelLock(result);
     }
 
     static async getExpiringToday() {
         const result = await db.query.channelLock.findMany({
-            where: sql.lte(sql.sql`${schema.channelLock.expireTimestamp}::DATE`, sql.sql`NOW()::DATE`),
+            where: { RAW: (table) => sql.lte(sql.sql`${table.expireTimestamp}::DATE`, sql.sql`NOW()::DATE`) },
         });
 
         return result.map((entry) => new ChannelLock(entry));
@@ -145,7 +145,7 @@ export class ChannelLock extends ChannelRestriction {
 
     static async getExpiringTomorrow() {
         const result = await db.query.channelLock.findMany({
-            where: sql.lte(sql.sql`${schema.channelLock.expireTimestamp}::DATE`, sql.sql`NOW()::DATE + INTERVAL '1 day'`),
+            where: { RAW: (table) => sql.lte(sql.sql`${table.expireTimestamp}::DATE`, sql.sql`NOW()::DATE + INTERVAL '1 day'`) },
         });
 
         return result.map((entry) => new ChannelLock(entry));

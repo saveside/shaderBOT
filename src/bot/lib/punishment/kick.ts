@@ -12,15 +12,15 @@ export class Kick extends Punishment {
     readonly TYPE_STRING: string = 'Kick';
 
     static async getByUUID(uuid: string) {
-        const result = await db.query.kick.findFirst({ where: sql.eq(schema.kick.id, uuid) });
+        const result = await db.query.kick.findFirst({ where: { id: uuid } });
         if (!result) return Promise.reject('A kick with the specified UUID does not exist.');
         return new Kick(result);
     }
 
     static async getLatestByUserID(userId: string) {
         const result = await db.query.kick.findFirst({
-            where: sql.eq(schema.kick.userId, userId),
-            orderBy: sql.desc(schema.kick.timestamp),
+            where: { userId },
+            orderBy: { timestamp: 'desc' },
         });
 
         if (!result) return Promise.reject('The specified user does not have any kicks.');
@@ -29,8 +29,8 @@ export class Kick extends Punishment {
 
     static async getAllByUserID(userId: string) {
         const result = await db.query.kick.findMany({
-            where: sql.eq(schema.kick.userId, userId),
-            orderBy: sql.desc(schema.kick.timestamp),
+            where: { userId },
+            orderBy: { timestamp: 'desc' },
         });
 
         return result.map((entry) => new Kick(entry));

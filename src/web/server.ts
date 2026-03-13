@@ -3,7 +3,6 @@ import jwt from '@elysiajs/jwt';
 import { verify as verifyGitHubWebhook } from '@octokit/webhooks-methods';
 import { Discord, generateState, OAuth2RequestError } from 'arctic';
 import { DefaultRestOptions, RequestMethod, Routes, type APIUser } from 'discord.js';
-import * as sql from 'drizzle-orm/sql';
 import { Elysia, t } from 'elysia';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -11,7 +10,6 @@ import { client } from '../bot/bot.ts';
 import { BanAppeal, getUserAppealData } from '../bot/lib/banAppeal.ts';
 import { getGuild } from '../bot/lib/misc.ts';
 import { db } from '../db/postgres.ts';
-import * as schema from '../db/schema.ts';
 import type { API } from './api.ts';
 import { GITHUB_PING_WEBHOOK_BODY, GITHUB_RELEASE_WEBHOOK_BODY, pingNotification, releaseNotification } from './webhook.ts';
 
@@ -188,7 +186,7 @@ export function startWebserver() {
         async ({ params: { channelID }, body, bodyText, headers: { 'x-hub-signature-256': signature, 'x-github-event': event }, status }) => {
             const project = await db.query.project.findFirst({
                 columns: { roleId: true, webhookSecret: true },
-                where: sql.eq(schema.project.channelId, channelID),
+                where: { channelId: channelID },
             });
 
             if (!project || !project.webhookSecret || !project.roleId) {

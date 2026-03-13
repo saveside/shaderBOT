@@ -56,14 +56,14 @@ export class Project {
     }
 
     public static async getByUUID(uuid: string) {
-        const result = await db.query.project.findFirst({ where: sql.eq(schema.project.id, uuid) });
+        const result = await db.query.project.findFirst({ where: { id: uuid } });
         if (!result) return Promise.reject('A project linked to the specified channel does not exist.');
         return new Project(result);
     }
 
     public static async getByChannelID(channelId: string) {
         const result = await db.query.project.findFirst({
-            where: sql.eq(schema.project.channelId, channelId),
+            where: { channelId },
         });
         if (!result) return Promise.reject('A project linked to the specified channel does not exist.');
         return new Project(result);
@@ -71,7 +71,7 @@ export class Project {
 
     public static async getAllUnarchived() {
         const result = await db.query.project.findMany({
-            where: sql.isNotNull(schema.project.roleId),
+            where: { roleId: { isNotNull: true } },
         });
 
         return result.map((entry) => new Project(entry));
@@ -79,7 +79,10 @@ export class Project {
 
     public static async getAllUnarchivedByOwnerID(userId: string) {
         const result = await db.query.project.findMany({
-            where: sql.and(sql.isNotNull(schema.project.roleId), sql.arrayContains(schema.project.ownerIds, [userId])),
+            where: {
+                roleId: { isNotNull: true },
+                ownerIds: { arrayContains: [userId] },
+            },
         });
 
         return result.map((entry) => new Project(entry));
@@ -207,7 +210,7 @@ export class Project {
                 bannerMessageId: true,
                 bannerLastTimestamp: true,
             },
-            where: sql.eq(schema.project.id, this.id),
+            where: { id: this.id },
         });
 
         if (!result || !result.bannerMessageId) return Promise.reject('There is no banner image set.');
@@ -360,7 +363,7 @@ export class Project {
     public static async isOwner(userId: string, channelId: string): Promise<boolean> {
         const result = await db.query.project.findFirst({
             columns: { ownerIds: true },
-            where: sql.eq(schema.project.channelId, channelId),
+            where: { channelId },
         });
 
         return result !== undefined && result.ownerIds.includes(userId);
@@ -369,7 +372,7 @@ export class Project {
     public static async isProjectChannel(channelId: string): Promise<boolean> {
         const result = await db.query.project.findFirst({
             columns: { id: true },
-            where: sql.eq(schema.project.channelId, channelId),
+            where: { channelId },
         });
 
         return result !== undefined;
@@ -378,7 +381,7 @@ export class Project {
     public static async isProjectArchived(channelId: string): Promise<boolean> {
         const result = await db.query.project.findFirst({
             columns: { roleId: true },
-            where: sql.eq(schema.project.channelId, channelId),
+            where: { channelId },
         });
 
         return result !== undefined && result.roleId === null;
@@ -513,23 +516,23 @@ export class ProjectMute {
 
     public static async getAllByUserID(userId: string) {
         const result = await db.query.projectMute.findMany({
-            where: sql.eq(schema.projectMute.userId, userId),
-            orderBy: sql.desc(schema.projectMute.timestamp),
+            where: { userId },
+            orderBy: { timestamp: 'desc' },
         });
         return result.map((entry) => new ProjectMute(entry));
     }
 
     public static async getAllByProjectID(projectId: string) {
         const result = await db.query.projectMute.findMany({
-            where: sql.eq(schema.projectMute.projectId, projectId),
-            orderBy: sql.desc(schema.projectMute.timestamp),
+            where: { projectId },
+            orderBy: { timestamp: 'desc' },
         });
         return result.map((entry) => new ProjectMute(entry));
     }
 
     public static async getByUserIDAndProjectID(userId: string, projectId: string) {
         const result = await db.query.projectMute.findFirst({
-            where: sql.and(sql.eq(schema.projectMute.userId, userId), sql.eq(schema.projectMute.projectId, projectId)),
+            where: { userId, projectId },
         });
 
         if (!result) return Promise.reject('The user is not muted in the specified project.');

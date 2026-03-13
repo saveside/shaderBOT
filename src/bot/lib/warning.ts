@@ -34,15 +34,15 @@ export class Warning {
     }
 
     static async getByUUID(uuid: string) {
-        const result = await db.query.warn.findFirst({ where: sql.eq(schema.warn.id, uuid) });
+        const result = await db.query.warn.findFirst({ where: { id: uuid } });
         if (!result) return Promise.reject('A warning with the specified UUID does not exist.');
         return new Warning(result);
     }
 
     static async getLatestByUserID(userId: string) {
         const result = await db.query.warn.findFirst({
-            where: sql.eq(schema.warn.userId, userId),
-            orderBy: sql.desc(schema.warn.timestamp),
+            where: { userId },
+            orderBy: { timestamp: 'desc' },
         });
         if (!result) return Promise.reject('The specified user does not have any warnings.');
         return new Warning(result);
@@ -50,8 +50,8 @@ export class Warning {
 
     static async getAllByUserID(userId: string) {
         const result = await db.query.warn.findMany({
-            where: sql.eq(schema.warn.userId, userId),
-            orderBy: sql.desc(schema.warn.timestamp),
+            where: { userId },
+            orderBy: { timestamp: 'desc' },
         });
         return result.map((entry) => new Warning(entry));
     }

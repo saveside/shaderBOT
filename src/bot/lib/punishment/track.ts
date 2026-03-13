@@ -11,13 +11,13 @@ export class Track extends Punishment {
     readonly TYPE_STRING: string = 'Track';
 
     static async getByUUID(uuid: string) {
-        const result = await db.query.track.findFirst({ where: sql.eq(schema.track.id, uuid) });
+        const result = await db.query.track.findFirst({ where: { id: uuid } });
         if (!result) return Promise.reject('A track entry with the specified UUID does not exist.');
         return new Track(result);
     }
 
     static async getByUserID(userId: string) {
-        const result = await db.query.track.findFirst({ where: sql.eq(schema.track.userId, userId) });
+        const result = await db.query.track.findFirst({ where: { userId } });
         if (!result) return Promise.reject('The specified user does not have any track entries.');
         return new Track(result);
     }

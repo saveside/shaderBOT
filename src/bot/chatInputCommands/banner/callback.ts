@@ -1,7 +1,5 @@
 import { EmbedBuilder, GuildPremiumTier, MessageFlags } from 'discord.js';
-import * as sql from 'drizzle-orm/sql';
 import { db } from '../../../db/postgres.ts';
-import * as schema from '../../../db/schema.ts';
 import type { ChatInputCommandCallback } from '../../chatInputCommandHandler.ts';
 import { EmbedColor, EmbedIcon, replyError } from '../../lib/embeds.ts';
 
@@ -17,8 +15,8 @@ export const command: ChatInputCommandCallback = {
             columns: {
                 channelId: true,
             },
-            where: sql.isNotNull(schema.project.bannerLastTimestamp),
-            orderBy: sql.desc(schema.project.bannerLastTimestamp),
+            where: { bannerLastTimestamp: { isNotNull: true } },
+            orderBy: { bannerLastTimestamp: 'desc' },
         });
 
         const banner = guild.bannerURL({ size: 1024 });

@@ -6,52 +6,53 @@ import * as schema from './schema.ts';
 
 export namespace Query {
     export namespace Context {
-        const _ALL_BY_USERID = db.$with('entries').as(
-            unionAll(
-                db
-                    .select({ id: schema.ban.id, timestamp: schema.ban.timestamp, tableoid: sql.sql<PunishmentTableOid>`tableoid::regclass`.as('tableoid') })
-                    .from(schema.ban)
-                    .where(sql.eq(schema.ban.userId, sql.sql.placeholder('userId'))),
-                db
-                    .select({ id: schema.mute.id, timestamp: schema.mute.timestamp, tableoid: sql.sql<PunishmentTableOid>`tableoid::regclass`.as('tableoid') })
-                    .from(schema.mute)
-                    .where(sql.eq(schema.mute.userId, sql.sql.placeholder('userId'))),
-                db
-                    .select({ id: schema.track.id, timestamp: schema.track.timestamp, tableoid: sql.sql<PunishmentTableOid>`tableoid::regclass`.as('tableoid') })
-                    .from(schema.track)
-                    .where(sql.eq(schema.track.userId, sql.sql.placeholder('userId'))),
-                db
-                    .select({ id: schema.kick.id, timestamp: schema.kick.timestamp, tableoid: sql.sql<PunishmentTableOid>`tableoid::regclass`.as('tableoid') })
-                    .from(schema.kick)
-                    .where(sql.eq(schema.kick.userId, sql.sql.placeholder('userId')))
-                    .orderBy(sql.desc(schema.kick.timestamp))
-                    .limit(1),
-                db
-                    .select({ id: schema.liftedBan.id, timestamp: schema.liftedBan.timestamp, tableoid: sql.sql<PunishmentTableOid>`tableoid::regclass`.as('tableoid') })
-                    .from(schema.liftedBan)
-                    .where(sql.eq(schema.liftedBan.userId, sql.sql.placeholder('userId')))
-                    .orderBy(sql.desc(schema.liftedBan.timestamp))
-                    .limit(1),
-                db
-                    .select({ id: schema.liftedMute.id, timestamp: schema.liftedMute.timestamp, tableoid: sql.sql<PunishmentTableOid>`tableoid::regclass`.as('tableoid') })
-                    .from(schema.liftedMute)
-                    .where(sql.eq(schema.liftedMute.userId, sql.sql.placeholder('userId')))
-                    .orderBy(sql.desc(schema.liftedMute.timestamp))
-                    .limit(1),
-                db
-                    .select({ id: schema.note.id, timestamp: schema.note.timestamp, tableoid: sql.sql<PunishmentTableOid>`tableoid::regclass`.as('tableoid') })
-                    .from(schema.note)
-                    .where(sql.eq(schema.note.userId, sql.sql.placeholder('userId')))
-                    .orderBy(sql.desc(schema.note.timestamp))
-                    .limit(1),
-                db
-                    .select({ id: schema.warn.id, timestamp: schema.warn.timestamp, tableoid: sql.sql<PunishmentTableOid>`tableoid::regclass`.as('tableoid') })
-                    .from(schema.warn)
-                    .where(sql.eq(schema.warn.userId, sql.sql.placeholder('userId')))
-                    .orderBy(sql.desc(schema.warn.timestamp))
-                    .limit(1),
-            ),
-        );
+        type ContextTable =
+            | typeof schema.ban
+            | typeof schema.mute
+            | typeof schema.track
+            | typeof schema.kick
+            | typeof schema.liftedBan
+            | typeof schema.liftedMute
+            | typeof schema.note
+            | typeof schema.warn;
+
+        function byUserIdFromTable(table: ContextTable) {
+            return db
+                .select({
+                    id: table.id,
+                    timestamp: table.timestamp,
+                    tableoid: sql.sql<PunishmentTableOid>`tableoid::regclass`.as('tableoid'),
+                })
+                .from(table)
+                .where(sql.eq(table.userId, sql.sql.placeholder('userId')))
+                .orderBy(sql.desc(table.timestamp))
+                .limit(1);
+        }
+
+        function byUuidFromTable(table: ContextTable) {
+            return db
+                .select({
+                    userId: table.userId,
+                    tableoid: sql.sql<PunishmentTableOid>`tableoid::regclass`.as('tableoid'),
+                })
+                .from(table)
+                .where(sql.eq(table.id, sql.sql.placeholder('uuid')));
+        }
+
+        const _ALL_BY_USERID = db
+            .$with('entries')
+            .as(
+                unionAll(
+                    byUserIdFromTable(schema.ban),
+                    byUserIdFromTable(schema.mute),
+                    byUserIdFromTable(schema.track),
+                    byUserIdFromTable(schema.kick),
+                    byUserIdFromTable(schema.liftedBan),
+                    byUserIdFromTable(schema.liftedMute),
+                    byUserIdFromTable(schema.note),
+                    byUserIdFromTable(schema.warn),
+                ),
+            );
 
         export const LATEST_BY_USERID = db
             .with(_ALL_BY_USERID)
@@ -65,65 +66,39 @@ export namespace Query {
             .prepare('context-by-userid');
 
         export const BY_UUID = unionAll(
-            db
-                .select({ userId: schema.ban.userId, tableoid: sql.sql<PunishmentTableOid>`tableoid::regclass`.as('tableoid') })
-                .from(schema.ban)
-                .where(sql.eq(schema.ban.id, sql.sql.placeholder('uuid'))),
-            db
-                .select({ userId: schema.mute.userId, tableoid: sql.sql<PunishmentTableOid>`tableoid::regclass`.as('tableoid') })
-                .from(schema.mute)
-                .where(sql.eq(schema.mute.id, sql.sql.placeholder('uuid'))),
-            db
-                .select({ userId: schema.track.userId, tableoid: sql.sql<PunishmentTableOid>`tableoid::regclass`.as('tableoid') })
-                .from(schema.track)
-                .where(sql.eq(schema.track.id, sql.sql.placeholder('uuid'))),
-            db
-                .select({ userId: schema.kick.userId, tableoid: sql.sql<PunishmentTableOid>`tableoid::regclass`.as('tableoid') })
-                .from(schema.kick)
-                .where(sql.eq(schema.kick.id, sql.sql.placeholder('uuid'))),
-            db
-                .select({ userId: schema.liftedBan.userId, tableoid: sql.sql<PunishmentTableOid>`tableoid::regclass`.as('tableoid') })
-                .from(schema.liftedBan)
-                .where(sql.eq(schema.liftedBan.id, sql.sql.placeholder('uuid'))),
-            db
-                .select({ userId: schema.liftedMute.userId, tableoid: sql.sql<PunishmentTableOid>`tableoid::regclass`.as('tableoid') })
-                .from(schema.liftedMute)
-                .where(sql.eq(schema.liftedMute.id, sql.sql.placeholder('uuid'))),
-            db
-                .select({ userId: schema.note.userId, tableoid: sql.sql<PunishmentTableOid>`tableoid::regclass`.as('tableoid') })
-                .from(schema.note)
-                .where(sql.eq(schema.note.id, sql.sql.placeholder('uuid'))),
-            db
-                .select({ userId: schema.warn.userId, tableoid: sql.sql<PunishmentTableOid>`tableoid::regclass`.as('tableoid') })
-                .from(schema.warn)
-                .where(sql.eq(schema.warn.id, sql.sql.placeholder('uuid'))),
+            byUuidFromTable(schema.ban),
+            byUuidFromTable(schema.mute),
+            byUuidFromTable(schema.track),
+            byUuidFromTable(schema.kick),
+            byUuidFromTable(schema.liftedBan),
+            byUuidFromTable(schema.liftedMute),
+            byUuidFromTable(schema.note),
+            byUuidFromTable(schema.warn),
         ).prepare('context-by-uuid');
     }
 
     export namespace AutomaticPunishment {
+        function excludedTimeFromLiftedTable(table: typeof schema.liftedBan | typeof schema.liftedMute) {
+            return db
+                .select({
+                    time: sql.sum(sql.sql`EXTRACT(EPOCH FROM (${table.liftedTimestamp} - GREATEST(${table.timestamp}, ${sql.sql.placeholder('warningTimestamp')})))`).as('time'),
+                })
+                .from(table)
+                .where(sql.and(sql.gte(table.liftedTimestamp, sql.sql.placeholder('warningTimestamp')), sql.eq(table.userId, sql.sql.placeholder('userId'))));
+        }
+
+        function excludedTimeFromActiveTable(table: typeof schema.ban | typeof schema.mute) {
+            return db
+                .select({ time: sql.sum(sql.sql`EXTRACT(EPOCH FROM (NOW() - GREATEST(${table.timestamp}, ${sql.sql.placeholder('warningTimestamp')})))`).as('time') })
+                .from(table)
+                .where(sql.eq(table.userId, sql.sql.placeholder('userId')));
+        }
+
         const _INDIVIDUAL_EXCLUDED_TIME = unionAll(
-            db
-                .select({
-                    time: sql.sum(sql.sql`EXTRACT(EPOCH FROM (${schema.liftedBan.liftedTimestamp} - GREATEST(${schema.liftedBan.timestamp}, ${sql.sql.placeholder('warningTimestamp')})))`).as('time'),
-                })
-                .from(schema.liftedBan)
-                .where(sql.and(sql.gte(schema.liftedBan.liftedTimestamp, sql.sql.placeholder('warningTimestamp')), sql.eq(schema.liftedBan.userId, sql.sql.placeholder('userId')))),
-            db
-                .select({
-                    time: sql
-                        .sum(sql.sql`EXTRACT(EPOCH FROM (${schema.liftedMute.liftedTimestamp} - GREATEST(${schema.liftedMute.timestamp}, ${sql.sql.placeholder('warningTimestamp')})))`)
-                        .as('time'),
-                })
-                .from(schema.liftedMute)
-                .where(sql.and(sql.gte(schema.liftedMute.liftedTimestamp, sql.sql.placeholder('warningTimestamp')), sql.eq(schema.liftedMute.userId, sql.sql.placeholder('userId')))),
-            db
-                .select({ time: sql.sum(sql.sql`EXTRACT(EPOCH FROM (NOW() - GREATEST(${schema.ban.timestamp}, ${sql.sql.placeholder('warningTimestamp')})))`).as('time') })
-                .from(schema.ban)
-                .where(sql.eq(schema.ban.userId, sql.sql.placeholder('userId'))),
-            db
-                .select({ time: sql.sum(sql.sql`EXTRACT(EPOCH FROM (NOW() - GREATEST(${schema.mute.timestamp}, ${sql.sql.placeholder('warningTimestamp')})))`).as('time') })
-                .from(schema.mute)
-                .where(sql.eq(schema.mute.userId, sql.sql.placeholder('userId'))),
+            excludedTimeFromLiftedTable(schema.liftedBan),
+            excludedTimeFromLiftedTable(schema.liftedMute),
+            excludedTimeFromActiveTable(schema.ban),
+            excludedTimeFromActiveTable(schema.mute),
         ).as('individualExcludedTime');
 
         export const EXCLUDED_TIME = db

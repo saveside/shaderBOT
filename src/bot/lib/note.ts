@@ -30,19 +30,25 @@ export class Note {
     }
 
     static async getByUUID(uuid: string) {
-        const result = await db.query.note.findFirst({ where: sql.eq(schema.note.id, uuid) });
+        const result = await db.query.note.findFirst({ where: { id: uuid } });
         if (!result) return Promise.reject('A note with the specified UUID does not exist.');
         return new Note(result);
     }
 
     static async getLatestByUserID(userId: string) {
-        const result = await db.query.note.findFirst({ where: sql.eq(schema.note.userId, userId), orderBy: [sql.desc(schema.note.timestamp)] });
+        const result = await db.query.note.findFirst({
+            where: { userId },
+            orderBy: { timestamp: 'desc' },
+        });
         if (!result) return Promise.reject('The specified user does not have any notes.');
         return new Note(result);
     }
 
     static async getAllByUserID(userId: string) {
-        const result = await db.query.note.findMany({ where: sql.eq(schema.note.userId, userId), orderBy: [sql.desc(schema.note.timestamp)] });
+        const result = await db.query.note.findMany({
+            where: { userId },
+            orderBy: { timestamp: 'desc' },
+        });
         return result.map((entry) => new Note(entry));
     }
 
